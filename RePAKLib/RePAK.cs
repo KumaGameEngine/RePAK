@@ -36,16 +36,16 @@ namespace RePAKLib
 
             ulong currentOffset = 0;
 
-            string[] files = Directory.GetFiles(directory, "*", SearchOption.AllDirectories)
-                            .Select(f => Path.GetRelativePath(directory, f))
-                            .ToArray();
+            string[] files = Directory.GetFiles(directory, "*", SearchOption.AllDirectories);
 
             List<byte> table = new();
 
             foreach (var item in files)
             {
                 var info = new FileInfo(item);
-                var sb = Encoding.Default.GetBytes(item + '\0');
+                var fr = Path.GetRelativePath(directory, item).Replace('\\','/');
+
+                var sb = Encoding.Default.GetBytes(fr + '\0');
 
                 table.AddRange(sb);
 
