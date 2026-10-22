@@ -1,27 +1,29 @@
 ﻿using RePAKLib;
+using RePAKUtility.Commands.CLI;
+using System.IO;
 
 namespace RePAKUtility
 {
     internal class Program
     {
+        static Dictionary<string, ICLICommand> Commands = new()
+        {
+            {"pack", new PackCommand()},
+            {"open", new OpenCommand()},
+            {"extract", new ExtractCommand()},
+        };
+
         static void Main(string[] args)
         {
-            switch (args[0])
+            if (args.Length == 0)
             {
-                case "pack":
-                    var fs = File.Create(args[2]);
-
-                    RePAK.Encrypt(fs, args[1], args.Length > 3 ? args[3] : "");
-
-                    fs.Close();
-                    break;
-                case "list":
-                    var vfs = RePAK.Decrypt(File.OpenRead(args[1]), args.Length > 2 ? args[2] : "");
-
-                    foreach (var item in vfs.FileTable)
-                        Console.WriteLine(item.Key);
-                    break;
+                Console.WriteLine("avaliable commands: " + string.Join(", ", Commands.Keys));
+                return;
             }
+
+            if (Commands.TryGetValue(args[0].ToLower(), out var cmd))
+                cmd.Execute(args.Skip(1).ToArray());
+            else Console.WriteLine("Invalid command " + args[0]);
         }
     }
 }

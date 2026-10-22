@@ -6,16 +6,18 @@ using System.Threading.Tasks;
 
 namespace RePAKLib
 {
-    public class RePAKVFS(Dictionary<string, (ulong offset, uint lenght)> fileTable, FileStream dataStream)
+    public class RePAKVFS(Dictionary<string, (ulong offset, ulong length)> fileTable, FileStream dataStream)
     {
-        public readonly Dictionary<string, (ulong offset, uint lenght)> FileTable = fileTable;
+        public readonly Dictionary<string, (ulong offset, ulong length)> FileTable = fileTable;
         public FileStream DataStream { get; } = dataStream;
+
+        public bool Exists(string path) => FileTable.ContainsKey(path);
 
         public SubStream GetFileStream(string path)
         {
             if (!FileTable.TryGetValue(path,out var data)) throw new FileNotFoundException("could not find "+ path);
 
-            return new SubStream(DataStream, (long)data.offset, data.lenght);
+            return new SubStream(DataStream, (long)data.offset, (long)data.length);
         }
 
         public byte[] ReadAllBytes(string path)

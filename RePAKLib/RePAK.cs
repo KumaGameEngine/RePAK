@@ -10,7 +10,12 @@ namespace RePAKLib
     {
         public static void Encrypt(FileStream outputStream, string directory, string key = "")
         {
+            outputStream.SetLength(0);
+
             byte[] keyPadded = new byte[32];
+
+            if (key.Length > 32)
+                throw new ArgumentOutOfRangeException("Encryption key must be less then or equal to 32 characters of lenght");
 
             for (int i = 0; i < Math.Min(key.Length, keyPadded.Length); i++)
                 keyPadded[i] = (byte)key[i];
@@ -45,14 +50,14 @@ namespace RePAKLib
                 var info = new FileInfo(item);
                 var fr = Path.GetRelativePath(directory, item).Replace('\\','/');
 
-                var sb = Encoding.Default.GetBytes(fr + '\0');
+                var sb = Encoding.ASCII.GetBytes(fr + '\0');
 
                 table.AddRange(sb);
 
                 table.AddRange(BitConverter.GetBytes(currentOffset));
-                currentOffset += (uint)info.Length;
+                currentOffset += (ulong)info.Length;
 
-                table.AddRange(BitConverter.GetBytes((uint)info.Length));
+                table.AddRange(BitConverter.GetBytes((ulong)info.Length));
             }
 
             byte[] tablearr = table.ToArray();
@@ -63,7 +68,11 @@ namespace RePAKLib
             outputStream.Write(tablearr);
 
             foreach (var item in files)
-                outputStream.Write(File.ReadAllBytes(item));
+            {
+                var fs = File.OpenRead(item);
+                fs.CopyTo(outputStream);
+                fs.Close();
+            }
 
             outputStream.Position = pos;
             outputStream.Write(BitConverter.GetBytes(table.Count));
@@ -74,6 +83,9 @@ namespace RePAKLib
         public static RePAKVFS Decrypt(FileStream inputStream, string key = "") 
         {
             byte[] keyPadded = new byte[32];
+
+            if (key.Length > 32)
+                throw new ArgumentOutOfRangeException("Decryption key must be less then or equal to 32 characters of lenght");
 
             for (int i = 0; i < Math.Min(key.Length, keyPadded.Length); i++)
                 keyPadded[i] = (byte)key[i];
@@ -96,11 +108,8 @@ namespace RePAKLib
             {
                 byte[] computedKey = SHA512.HashData(keyPadded);
 
-                for (int i = 0; i < Math.Min(keyraw.Length,computedKey.Length); i++)
-                {
-                    if (keyraw[i] != computedKey[i])
-                        throw new Exception("invalid key for RePAK file");
-                }
+                if (!CryptographicOperations.FixedTimeEquals(keyraw, computedKey))
+                    throw new Exception("invalid key for RePAK file");
             }
 
             byte[] nonce = new byte[12];
@@ -118,27 +127,22 @@ namespace RePAKLib
             if (encrypted)
                 tableRaw = ChaCha20Xor(keyPadded,nonce,tableRaw);
 
-            Dictionary<string, (ulong offset, uint lenght)> fileTable = new();
+            Dictionary<string, (ulong, ulong)> fileTable = new();
 
-            string path = "";
-
-            for (int i = 0; i < size; i++)
+            int pathbyte = 0;
+            while (pathbyte < size)
             {
-                var ch = (char)tableRaw[i];
+                int end = Array.IndexOf(tableRaw, (byte)0, pathbyte);
+                string path = Encoding.ASCII.GetString(tableRaw, pathbyte, end - pathbyte);
+                pathbyte = end + 1;
 
-                if (ch == '\0')
-                {
-                    var start = BinaryPrimitives.ReadUInt64LittleEndian(tableRaw.AsSpan(i, 8));
-                    i += 8;
+                ulong start = BinaryPrimitives.ReadUInt64LittleEndian(tableRaw.AsSpan(pathbyte, 8));
+                pathbyte += 8;
 
-                    var lenght = BinaryPrimitives.ReadUInt32LittleEndian(tableRaw.AsSpan(i, 4));
-                    i += 4;
+                ulong length = BinaryPrimitives.ReadUInt64LittleEndian(tableRaw.AsSpan(pathbyte, 8));
+                pathbyte += 8;
 
-                    fileTable[path] = (start + size + 128, lenght);
-
-                    path = "";
-                }
-                else path += ch;
+                fileTable[path] = (start + size + 128, length);
             }
 
             return new(fileTable, inputStream);
