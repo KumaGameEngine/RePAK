@@ -17,13 +17,20 @@ namespace RePAKUtility
         {
             if (args.Length == 0)
             {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine("avaliable commands: " + string.Join(", ", Commands.Keys));
+                Console.ResetColor();
                 return;
             }
 
             if (Commands.TryGetValue(args[0].ToLower(), out var cmd))
                 cmd.Execute(args.Skip(1).ToArray());
-            else Console.WriteLine("Invalid command " + args[0]);
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Invalid command " + args[0]);
+                Console.ResetColor();
+            }
         }
     }
 }

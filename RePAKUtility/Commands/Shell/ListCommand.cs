@@ -21,7 +21,9 @@ namespace RePAKUtility.Commands.Shell
         {
             if (args.Length != 0)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("too many arguments");
+                Console.ResetColor();
                 return;
             }
 
@@ -34,6 +36,8 @@ namespace RePAKUtility.Commands.Shell
 
                 var fs = item.Value.length;
 
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+
                 if (fs >= GIGABYTE_TRESHOLD)
                     Console.WriteLine($"{(fs / GIGABYTE):F2} GB");
                 else if (fs >= MEGABYTE_TRESHOLD)
@@ -42,6 +46,8 @@ namespace RePAKUtility.Commands.Shell
                     Console.WriteLine($"{(fs / KILOBYTE):F2} KB");
                 else 
                     Console.WriteLine($"{fs} Byte");
+
+                Console.ResetColor();
             }
         }
     }

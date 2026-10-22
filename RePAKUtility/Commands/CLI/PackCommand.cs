@@ -13,7 +13,9 @@ namespace RePAKUtility.Commands.CLI
         {
             if (args.Length < 2 || args.Length > 3)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Usage: pack <directory> <output.pak> [key]");
+                Console.ResetColor();
                 return;
             }
 

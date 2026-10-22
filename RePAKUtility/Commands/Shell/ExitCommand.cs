@@ -13,7 +13,9 @@ namespace RePAKUtility.Commands.Shell
         {
             if (args.Length != 0)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("too many arguments");
+                Console.ResetColor();
                 return;
             }
 

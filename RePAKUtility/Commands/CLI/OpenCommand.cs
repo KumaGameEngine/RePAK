@@ -22,7 +22,9 @@ namespace RePAKUtility.Commands.CLI
         {
             if (args.Length < 1 || args.Length > 2)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Usage: open <file.pak> [key]");
+                Console.ResetColor();
                 return;
             }
 
@@ -30,13 +32,21 @@ namespace RePAKUtility.Commands.CLI
 
             while (true)
             {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.Write(">> ");
+
+                Console.ForegroundColor = ConsoleColor.Cyan;
                 var cmdargs = CommandLineParser.SplitCommandLine(Console.ReadLine()!).ToArray();
+                Console.ResetColor();
 
                 if (ShellCommands.TryGetValue(cmdargs[0].ToLower(), out var cmd))
                     cmd.Execute(vfs, cmdargs.Skip(1).ToArray());
-                else 
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Invalid command, available commands: " + string.Join(", ", ShellCommands.Keys));
+                    Console.ResetColor();
+                }
             }
         }
     }
